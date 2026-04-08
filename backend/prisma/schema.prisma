@@ -1,0 +1,57 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("student")
+  createdAt DateTime  @default(now())
+  lectures  Lecture[]
+}
+
+model Lecture {
+  id         Int         @id @default(autoincrement())
+  title      String
+  subject    String
+  audioUrl   String
+  status     String      @default("uploaded")
+  userId     Int
+  createdAt  DateTime    @default(now())
+  flashcards Flashcard[]
+  uploadedBy User        @relation(fields: [userId], references: [id])
+  notes      Note?
+  transcript Transcript?
+}
+
+model Transcript {
+  id        Int      @id @default(autoincrement())
+  lectureId Int      @unique
+  content   String
+  createdAt DateTime @default(now())
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+}
+
+model Flashcard {
+  id        Int      @id @default(autoincrement())
+  lectureId Int
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  lectureId Int      @unique
+  content   String
+  createdAt DateTime @default(now())
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+}

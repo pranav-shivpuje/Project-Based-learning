@@ -2,66 +2,35 @@ require('dotenv').config();
 const OpenAI = require('openai');
 const fs = require('fs');
 const path = require('path');
+const { AssemblyAI } = require('assemblyai');
 const prisma = require('../prisma/client');
 
-// Groq is OpenAI-compatible — just swap the baseURL and key
+// Groq for text generation
 const groq = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: 'https://api.groq.com/openai/v1',
 });
 
-const { splitAudioIntoChunks, cleanupChunks } = require('./audioChunker');
+// AssemblyAI for transcription
+const aai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 
-const SIZE_LIMIT = 20 * 1024 * 1024; // 20MB
+const transcribeAudio = async (audioFilePath) => {
+  console.log('Uploading to AssemblyAI...');
+  const transcript = await aai.transcripts.transcribe({
+    audio: audioFilePath,
+    speech_models: ['universal-2'],
+  });
 
-const transcribeAudio = async (audioFilePath, retries = 2) => {
-  const fileSize = fs.statSync(audioFilePath).size;
-
-  if (fileSize <= SIZE_LIMIT) {
-    // Small file — send directly
-    return await transcribeFile(audioFilePath, retries);
+  if (transcript.status === 'error') {
+    throw new Error(`AssemblyAI transcription failed: ${transcript.error}`);
   }
 
-  // Large file — split into chunks
-  console.log(`File is ${(fileSize / 1024 / 1024).toFixed(1)}MB, splitting into chunks...`);
-  let chunkPaths = [];
-  try {
-    chunkPaths = await splitAudioIntoChunks(audioFilePath);
-    console.log(`Split into ${chunkPaths.length} chunks`);
-
-    const transcripts = [];
-    for (let i = 0; i < chunkPaths.length; i++) {
-      console.log(`Transcribing chunk ${i + 1}/${chunkPaths.length}...`);
-      const text = await transcribeFile(chunkPaths[i], retries);
-      transcripts.push(text);
-    }
-    return transcripts.join(' ');
-  } finally {
-    cleanupChunks(chunkPaths);
-  }
+  console.log('Transcription complete.');
+  return transcript.text;
 };
 
-const transcribeFile = async (audioFilePath, retries = 2) => {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const transcription = await groq.audio.transcriptions.create({
-        file: fs.createReadStream(audioFilePath),
-        model: 'whisper-large-v3-turbo',
-      });
-      return transcription.text;
-    } catch (err) {
-      if (attempt < retries && (err.status === 524 || err.status === 503 || err.status === 502)) {
-        console.log(`Transcription attempt ${attempt + 1} failed (${err.status}), retrying in 5s...`);
-        await new Promise(r => setTimeout(r, 5000));
-      } else {
-        throw err;
-      }
-    }
-  }
-};
-
-// Truncate transcript to avoid token limits on free tier (~8000 tokens ≈ 6000 words)
-const truncateTranscript = (text, maxWords = 6000) => {
+// Truncate transcript to avoid token limits on free tier (~10000 tokens ≈ 8000 words)
+const truncateTranscript = (text, maxWords = 8000) => {
   const words = text.split(/\s+/);
   if (words.length <= maxWords) return text;
   console.log(`Transcript truncated from ${words.length} to ${maxWords} words for AI generation`);
@@ -76,7 +45,7 @@ const generateFlashcards = async (transcript) => {
         role: 'system',
         content: `You are an expert educator creating high-quality study flashcards from a lecture transcript.
 
-Generate as many flashcards as needed to cover all important concepts — typically 8 to 25 depending on lecture length and topic density. Do not pad with trivial questions, and do not skip important concepts.
+Generate as many flashcards as needed to thoroughly cover all important concepts — for a long lecture (1+ hours) generate 25-40 flashcards. Do not pad with trivial questions, and do not skip important concepts.
 
 Each flashcard must:
 - Ask a specific, meaningful question that tests real understanding
@@ -102,15 +71,11 @@ const generateMCQs = async (transcript) => {
         role: 'system',
         content: `You are an expert educator creating multiple choice quiz questions from a lecture transcript.
 
-Generate questions across 3 difficulty levels:
+Generate questions across 3 difficulty levels. For a long lecture (1+ hours) generate 25-35 total questions — roughly equal across easy, medium, and hard.
 
-EASY: Direct recall questions based on facts, definitions, and concepts explicitly stated in the lecture. A student who attended the lecture should answer these easily.
-
-MEDIUM: Application-based questions that require understanding the concept and applying it to a scenario. Slightly beyond direct recall but not too complex.
-
-HARD: Challenging questions that require deep understanding, analysis, comparison between concepts, or reasoning beyond what was directly stated. These should make students think hard.
-
-Generate roughly equal numbers across all 3 levels (total 12-18 questions depending on lecture length).
+EASY: Direct recall questions based on facts, definitions, and concepts explicitly stated in the lecture.
+MEDIUM: Application-based questions that require understanding and applying the concept to a scenario.
+HARD: Challenging questions requiring deep understanding, analysis, comparison, or reasoning beyond what was directly stated.
 
 Return ONLY valid JSON:
 {
@@ -124,7 +89,6 @@ Return ONLY valid JSON:
     }
   ]
 }
-
 difficulty must be exactly one of: "easy", "medium", "hard"`,
       },
       { role: 'user', content: `Generate MCQ questions with difficulty levels from this lecture. Return JSON:\n\n${transcript}` },
@@ -208,25 +172,30 @@ Rules:
 
 const processLecture = async (lectureId, audioUrl, originalFilePath = null) => {
   try {
-    const filename = audioUrl.split('/uploads/')[1];
-    const localPath = originalFilePath || require('path').join(__dirname, '../uploads', filename);
+    const localPath = originalFilePath;
+    if (!localPath || !fs.existsSync(localPath)) {
+      throw new Error('Audio file not found for processing');
+    }
 
     const transcript = await transcribeAudio(localPath);
 
     // Clean up original file after transcription
-    if (originalFilePath && fs.existsSync(originalFilePath)) {
-      try { fs.unlinkSync(originalFilePath); } catch {}
-    }
+    try { fs.unlinkSync(localPath); } catch {}
 
     await prisma.transcript.create({ data: { lectureId, content: transcript } });
     await prisma.lecture.update({ where: { id: lectureId }, data: { status: 'transcribed' } });
 
-    const [flashcards, mcqs, notes, glossary] = await Promise.all([
-      generateFlashcards(truncateTranscript(transcript)),
-      generateMCQs(truncateTranscript(transcript)),
-      generateNotes(truncateTranscript(transcript)),
-      generateGlossary(truncateTranscript(transcript)),
-    ]);
+    // Small delay between AI calls to avoid TPM rate limits
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    const truncated = truncateTranscript(transcript);
+    const flashcards = await generateFlashcards(truncated);
+    await sleep(3000);
+    const mcqs = await generateMCQs(truncated);
+    await sleep(3000);
+    const notes = await generateNotes(truncated);
+    await sleep(3000);
+    const glossary = await generateGlossary(truncated);
 
     await prisma.flashcard.createMany({
       data: [

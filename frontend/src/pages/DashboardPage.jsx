@@ -3,92 +3,119 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
-const statusStyle = (s) => ({
-  ready:       { dot: 'bg-emerald-400', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  failed:      { dot: 'bg-red-400',     badge: 'bg-red-50 text-red-600 border-red-200' },
-  transcribed: { dot: 'bg-blue-400',    badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-}[s] || { dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200' });
+const SUBJECT_COLORS = { ADC: '#7B61FF', MA: '#00E5A0', ML: '#F59E0B', OOP: '#FF4D6A', ISPM: '#3B82F6', ICSR: '#EC4899' };
 
-const subjectColor = (s) => {
-  const colors = ['bg-violet-100 text-violet-700','bg-blue-100 text-blue-700','bg-emerald-100 text-emerald-700','bg-orange-100 text-orange-700','bg-pink-100 text-pink-700','bg-cyan-100 text-cyan-700'];
-  return colors[s?.charCodeAt(0) % colors.length] || colors[0];
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 };
+
+function SkeletonCard() {
+  return (
+    <div style={{ background: '#FFFFFF', border: '1px solid #E5E4F0', borderRadius: '12px', padding: '20px' }}>
+      <div className="skeleton" style={{ height: '14px', width: '60px', marginBottom: '12px' }} />
+      <div className="skeleton" style={{ height: '18px', width: '80%', marginBottom: '8px' }} />
+      <div className="skeleton" style={{ height: '12px', width: '40%' }} />
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [lectures, setLectures] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/lectures').then(({ data }) => setLectures(data)).catch(console.error);
+    api.get('/lectures').then(({ data }) => { setLectures(data); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  const recent = lectures.slice(0, 4);
   const ready = lectures.filter(l => l.status === 'ready').length;
-  const processing = lectures.filter(l => !['ready','failed'].includes(l.status)).length;
+  const processing = lectures.filter(l => !['ready', 'failed'].includes(l.status)).length;
+  const recent = lectures.slice(0, 4);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-8 mb-8 text-white shadow-xl">
-        <p className="text-indigo-200 text-sm font-medium mb-1">Welcome back</p>
-        <h1 className="text-3xl font-bold mb-1">{user?.name} 👋</h1>
-        <p className="text-indigo-200">Your AI-powered lecture study hub</p>
-        <Link
-          to="/upload"
-          className="inline-flex items-center gap-2 mt-5 bg-white text-indigo-600 font-semibold px-5 py-2.5 rounded-xl hover:bg-indigo-50 transition shadow"
-        >
-          <span className="text-lg">+</span> Upload New Lecture
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 24px', position: 'relative' }}>
+      {/* Radial glow */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 30% 50%, rgba(123,97,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* Header */}
+      <div className="dashboard-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px' }}>
+        <div>
+          <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#1A1A2E', marginBottom: '4px' }}>
+            {getGreeting()}, {user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p style={{ fontSize: '14px', color: '#6B7280' }}>Your study hub · {lectures.length} lectures</p>
+        </div>
+        <Link to="/upload" className="dashboard-upload-btn" style={{ background: '#7B61FF', color: '#fff', textDecoration: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', transition: 'opacity 0.15s', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
+          onMouseEnter={e => e.target.style.opacity = '0.85'}
+          onMouseLeave={e => e.target.style.opacity = '1'}>
+          + Upload Lecture
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '48px' }}>
         {[
-          { label: 'Total Lectures', value: lectures.length, icon: '📚', color: 'from-indigo-500 to-indigo-600' },
-          { label: 'Ready to Study', value: ready, icon: '✅', color: 'from-emerald-500 to-emerald-600' },
-          { label: 'Processing', value: processing, icon: '⚙️', color: 'from-amber-500 to-amber-600' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-lg mb-3`}>
-              {stat.icon}
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-sm text-gray-500 mt-0.5">{stat.label}</div>
+          { label: 'Total Lectures', value: lectures.length, border: '#7B61FF' },
+          { label: 'Ready to Study', value: ready, border: '#00E5A0' },
+          { label: 'Processing', value: processing, border: '#6B7280' },
+        ].map(s => (
+          <div key={s.label} style={{ background: '#FFFFFF', border: '1px solid #E5E4F0', borderLeft: `3px solid ${s.border}`, borderRadius: '12px', padding: '24px' }}>
+            <div style={{ fontSize: '40px', fontWeight: '700', color: '#1A1A2E', lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '8px' }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Recent */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Lectures</h2>
-        <Link to="/library" className="text-sm text-indigo-600 hover:underline font-medium">View all →</Link>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '600', color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recent Lectures</span>
+        <Link to="/library" style={{ fontSize: '13px', color: '#7B61FF', textDecoration: 'none', fontWeight: '500' }}>View all →</Link>
       </div>
 
-      {recent.length === 0 ? (
-        <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-          <div className="text-4xl mb-3">🎙️</div>
-          <p className="text-gray-500 font-medium">No lectures yet</p>
-          <p className="text-gray-400 text-sm mt-1">Upload your first lecture to get started</p>
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : recent.length === 0 ? (
+        <div style={{ textAlign: 'center', paddingTop: '80px' }}>
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style={{ margin: '0 auto 20px' }}>
+            <rect x="10" y="20" width="60" height="45" rx="4" stroke="#E5E4F0" strokeWidth="2" fill="none"/>
+            <path d="M10 32h60" stroke="#E5E4F0" strokeWidth="2"/>
+            <path d="M25 20V15a5 5 0 0110 0v5M45 20V15a5 5 0 0110 0v5" stroke="#E5E4F0" strokeWidth="2"/>
+            <path d="M25 45h30M25 53h20" stroke="#E5E4F0" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <p style={{ fontSize: '20px', fontWeight: '600', color: '#1A1A2E', marginBottom: '8px' }}>No lectures yet</p>
+          <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>Upload your first lecture audio to get started</p>
+          <Link to="/upload" style={{ background: '#7B61FF', color: '#fff', textDecoration: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: '600' }}>
+            Upload Lecture
+          </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="lectures-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
           {recent.map(l => {
-            const s = statusStyle(l.status);
+            const abbr = l.subject?.split(' ')[0];
+            const color = SUBJECT_COLORS[abbr] || '#7B61FF';
             return (
-              <Link key={l.id} to={`/lecture/${l.id}`}
-                className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition shadow-sm group"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${subjectColor(l.subject)}`}>
-                    {l.subject.split(' ')[0]}
-                  </span>
-                  <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${s.badge}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                    {l.status}
+              <Link key={l.id} to={`/lecture/${l.id}`} style={{ textDecoration: 'none', display: 'block', background: '#FFFFFF', border: '1px solid #E5E4F0', borderRadius: '12px', padding: '20px', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#C4C2E0'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E4F0'}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '600', background: '#E5E4F0', color: '#6B7280', padding: '4px 10px', borderRadius: '999px' }}>{abbr}</span>
+                  <span style={{ fontSize: '12px', color: l.status === 'ready' ? '#00E5A0' : l.status === 'failed' ? '#FF4D6A' : '#F59E0B', fontWeight: '500' }}>
+                    ● {l.status}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-2">{l.title}</h3>
-                <p className="text-xs text-gray-400 mt-2">{new Date(l.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</p>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1A1A2E', marginBottom: '6px', lineHeight: '1.4' }}>{l.title}</h3>
+                <p style={{ fontSize: '13px', color: '#9CA3AF', marginBottom: '16px' }}>
+                  {new Date(l.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+                <div style={{ width: '100%', height: '4px', background: '#E5E4F0', borderRadius: '999px', marginBottom: '6px' }}>
+                  <div style={{ width: '0%', height: '100%', background: color, borderRadius: '999px' }} />
+                </div>
+                <p style={{ fontSize: '11px', color: '#9CA3AF' }}>0% studied</p>
               </Link>
             );
           })}

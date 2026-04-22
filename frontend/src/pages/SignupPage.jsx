@@ -9,81 +9,66 @@ export default function SignupPage() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await api.post('/auth/signup', form);
-      navigate('/login');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Signup failed');
-    } finally {
-      setLoading(false);
-    }
+    e.preventDefault(); setError(''); setLoading(true);
+    try { await api.post('/auth/signup', form); navigate('/login'); }
+    catch (err) { setError(err.response?.data?.error || 'Signup failed'); }
+    finally { setLoading(false); }
+  };
+
+  const inputStyle = {
+    width: '100%', background: '#F8F7FF', border: '1px solid #E5E4F0',
+    borderRadius: '8px', padding: '10px 16px', fontSize: '14px',
+    color: '#1A1A2E', outline: 'none', transition: 'border-color 0.15s',
+    fontFamily: 'DM Sans, sans-serif',
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-violet-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🎓</div>
-          <h1 className="text-3xl font-bold text-gray-900">LectureTranscribber</h1>
-          <p className="text-gray-500 mt-1">Create your free account</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F7FF', padding: '32px' }}>
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎓</div>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1A1A2E' }}>Create your account</h1>
+          <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>Start turning lectures into study material</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Get started</h2>
+
+        <div style={{ background: '#FFFFFF', border: '1px solid #E5E4F0', borderRadius: '12px', padding: '32px' }}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
+            <div style={{ background: 'rgba(255,77,106,0.08)', border: '1px solid rgba(255,77,106,0.25)', color: '#FF4D6A', fontSize: '13px', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Your name' },
+              { label: 'Email', key: 'email', type: 'email', placeholder: 'you@example.com' },
+              { label: 'Password', key: 'password', type: 'password', placeholder: '••••••••' },
+            ].map(f => (
+              <div key={f.key}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>{f.label}</label>
+                <input style={inputStyle} type={f.type} placeholder={f.placeholder}
+                  value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                  onFocus={e => e.target.style.borderColor = '#7B61FF'}
+                  onBlur={e => e.target.style.borderColor = '#E5E4F0'} required />
+              </div>
+            ))}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                placeholder="Your name"
-                value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                type="email" placeholder="you@example.com"
-                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                type="password" placeholder="••••••••"
-                value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">I am a...</label>
-              <select
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition bg-white"
-                value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
-              >
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>I am a...</label>
+              <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
               </select>
             </div>
-            <button
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-60 mt-2"
-              type="submit" disabled={loading}
-            >
+            <button type="submit" disabled={loading}
+              style={{ background: '#7B61FF', color: '#fff', border: 'none', borderRadius: '8px', padding: '11px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1, fontFamily: 'DM Sans, sans-serif', marginTop: '8px' }}>
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
-          <p className="text-sm text-center mt-5 text-gray-500">
-            Already have an account?{' '}
-            <Link to="/login" className="text-indigo-600 font-medium hover:underline">Log in</Link>
-          </p>
         </div>
+
+        <p style={{ fontSize: '13px', textAlign: 'center', marginTop: '20px', color: '#9CA3AF' }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{ color: '#7B61FF', textDecoration: 'none', fontWeight: '500' }}>Sign in</Link>
+        </p>
       </div>
     </div>
   );

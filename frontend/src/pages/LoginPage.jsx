@@ -12,61 +12,81 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       const { data } = await api.post('/auth/login', form);
       login(data.token, data.user);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
+  };
+
+  const inputStyle = {
+    width: '100%', background: '#F8F7FF', border: '1px solid #E5E4F0',
+    borderRadius: '8px', padding: '10px 16px', fontSize: '14px',
+    color: '#1A1A2E', outline: 'none', transition: 'border-color 0.15s',
+    fontFamily: 'DM Sans, sans-serif',
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-violet-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🎓</div>
-          <h1 className="text-3xl font-bold text-gray-900">LectureTranscribber</h1>
-          <p className="text-gray-500 mt-1">Never miss a lesson again.</p>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#F8F7FF' }}>
+      {/* Left — keep purple gradient panel as-is */}
+      <div style={{ width: '45%', background: '#16161A', borderRight: '1px solid #2A2A35', padding: '64px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: '18px', fontWeight: '700', color: '#F0EFF5' }}>🎓 LectureTranscribber</div>
+        <div>
+          <h2 style={{ fontSize: '36px', fontWeight: '700', color: '#F0EFF5', lineHeight: '1.2', marginBottom: '16px', fontFamily: 'Lora, serif' }}>
+            Turn any lecture<br />into study material.
+          </h2>
+          <p style={{ fontSize: '15px', color: '#8B8A99', lineHeight: '1.6' }}>
+            Upload audio → get notes, flashcards, MCQs, a glossary, and a personal tutor chatbot. Instantly.
+          </p>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">Welcome back</h2>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {['Notes', 'Flashcards', 'MCQ Quiz', 'Glossary', 'AI Tutor'].map(f => (
+            <span key={f} style={{ fontSize: '12px', background: '#2A2A35', color: '#8B8A99', padding: '6px 12px', borderRadius: '999px' }}>{f}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Right */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+        <div style={{ width: '100%', maxWidth: '360px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1A1A2E', marginBottom: '4px' }}>Welcome back</h1>
+          <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '32px' }}>Sign in to your account</p>
+
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
+            <div style={{ background: 'rgba(255,77,106,0.08)', border: '1px solid rgba(255,77,106,0.25)', color: '#FF4D6A', fontSize: '13px', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                type="email" placeholder="you@example.com"
-                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required
-              />
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>Email</label>
+              <input style={inputStyle} type="email" placeholder="you@example.com"
+                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                onFocus={e => e.target.style.borderColor = '#7B61FF'}
+                onBlur={e => e.target.style.borderColor = '#E5E4F0'} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                type="password" placeholder="••••••••"
-                value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required
-              />
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>Password</label>
+              <input style={inputStyle} type="password" placeholder="••••••••"
+                value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+                onFocus={e => e.target.style.borderColor = '#7B61FF'}
+                onBlur={e => e.target.style.borderColor = '#E5E4F0'} required />
             </div>
-            <button
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-60 mt-2"
-              type="submit" disabled={loading}
-            >
-              {loading ? 'Logging in...' : 'Log In'}
+            <button type="submit" disabled={loading}
+              style={{ background: '#7B61FF', color: '#fff', border: 'none', borderRadius: '8px', padding: '11px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1, fontFamily: 'DM Sans, sans-serif', marginTop: '8px' }}
+              onMouseEnter={e => { if (!loading) e.target.style.opacity = '0.85'; }}
+              onMouseLeave={e => e.target.style.opacity = loading ? '0.6' : '1'}>
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className="text-sm text-center mt-5 text-gray-500">
+
+          <p style={{ fontSize: '13px', textAlign: 'center', marginTop: '24px', color: '#9CA3AF' }}>
             No account?{' '}
-            <Link to="/signup" className="text-indigo-600 font-medium hover:underline">Sign up free</Link>
+            <Link to="/signup" style={{ color: '#7B61FF', textDecoration: 'none', fontWeight: '500' }}>Create one free</Link>
           </p>
         </div>
       </div>

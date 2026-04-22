@@ -12,111 +12,100 @@ const SUBJECTS = [
 ];
 
 export default function UploadPage() {
-  const [form, setForm] = useState({ title: '', subject: 'Biology' });
+  const [form, setForm] = useState({ title: '', subject: SUBJECTS[0] });
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const dropped = e.dataTransfer.files[0];
-    if (dropped) setFile(dropped);
+  const inputStyle = {
+    width: '100%', background: '#F8F7FF', border: '1px solid #E5E4F0',
+    borderRadius: '8px', padding: '10px 16px', fontSize: '14px',
+    color: '#1A1A2E', outline: 'none', transition: 'border-color 0.15s',
+    fontFamily: 'DM Sans, sans-serif',
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file) return setError('Please select an audio file.');
-    setError('');
-    setLoading(true);
-    setStatus('Uploading...');
-
+    setError(''); setLoading(true); setStatus('Uploading...');
     const formData = new FormData();
     formData.append('audio', file);
     formData.append('title', form.title);
     formData.append('subject', form.subject);
-
     try {
-      const { data } = await api.post('/lectures/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.post('/lectures/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setStatus('Uploaded! Redirecting...');
       setTimeout(() => navigate(`/lecture/${data.lectureId}`), 1200);
     } catch (err) {
       setError(err.response?.data?.error || 'Upload failed');
-      setStatus('');
-      setLoading(false);
+      setStatus(''); setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Upload a Lecture</h1>
-        <p className="text-gray-500 mt-1">We'll transcribe it and generate flashcards + notes automatically.</p>
+    <div style={{ maxWidth: '560px', margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1A1A2E', marginBottom: '4px' }}>Upload a Lecture</h1>
+        <p style={{ fontSize: '14px', color: '#6B7280' }}>We'll transcribe it and generate notes, flashcards, MCQs and more.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div style={{ background: '#FFFFFF', border: '1px solid #E5E4F0', borderRadius: '12px', padding: '32px' }}>
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-5">
+          <div style={{ background: 'rgba(255,77,106,0.08)', border: '1px solid rgba(255,77,106,0.25)', color: '#FF4D6A', fontSize: '13px', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
             {error}
           </div>
         )}
         {status && (
-          <div className="bg-indigo-50 border border-indigo-200 text-indigo-600 text-sm px-4 py-3 rounded-lg mb-5 flex items-center gap-2">
-            <span className="animate-spin">⏳</span> {status}
+          <div style={{ background: 'rgba(123,97,255,0.08)', border: '1px solid rgba(123,97,255,0.2)', color: '#7B61FF', fontSize: '13px', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> {status}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lecture Title</label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-              placeholder="e.g. Introduction to Photosynthesis"
-              value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required
-            />
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>Lecture Title</label>
+            <input style={inputStyle} placeholder="e.g. Introduction to Binary Trees"
+              value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+              onFocus={e => e.target.style.borderColor = '#7B61FF'}
+              onBlur={e => e.target.style.borderColor = '#E5E4F0'} required />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition bg-white"
-              value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-            >
-              {SUBJECTS.map(s => <option key={s}>{s}</option>)}
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>Subject</label>
+            <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
+              onFocus={e => e.target.style.borderColor = '#7B61FF'}
+              onBlur={e => e.target.style.borderColor = '#E5E4F0'}>
+              {SUBJECTS.map(s => <option key={s} style={{ background: '#FFFFFF' }}>{s}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Audio File</label>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#6B7280', marginBottom: '6px' }}>Audio File</label>
             <div
-              onDrop={handleDrop}
-              onDragOver={e => e.preventDefault()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition cursor-pointer ${file ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}
               onClick={() => document.getElementById('audioInput').click()}
-            >
-              <input type="file" accept=".mp3,.wav,.m4a" onChange={e => setFile(e.target.files[0])} className="hidden" id="audioInput" />
-              <div className="text-3xl mb-2">{file ? '🎵' : '🎙️'}</div>
+              onDrop={e => { e.preventDefault(); setFile(e.dataTransfer.files[0]); }}
+              onDragOver={e => e.preventDefault()}
+              style={{ border: `2px dashed ${file ? '#7B61FF' : '#E5E4F0'}`, borderRadius: '8px', padding: '32px', textAlign: 'center', cursor: 'pointer', background: file ? 'rgba(123,97,255,0.04)' : 'transparent', transition: 'all 0.15s' }}>
+              <input type="file" accept=".mp3,.wav,.m4a,.mp4" onChange={e => setFile(e.target.files[0])} style={{ display: 'none' }} id="audioInput" />
+              <div style={{ fontSize: '28px', marginBottom: '8px' }}>{file ? '🎵' : '🎙️'}</div>
               {file ? (
                 <div>
-                  <p className="font-medium text-indigo-700">{file.name}</p>
-                  <p className="text-xs text-gray-400 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p style={{ fontSize: '14px', fontWeight: '500', color: '#7B61FF' }}>{file.name}</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-gray-600 font-medium">Drop your audio file here</p>
-                  <p className="text-xs text-gray-400 mt-1">or click to browse — .mp3, .wav, .m4a (max 100MB)</p>
+                  <p style={{ fontSize: '14px', color: '#6B7280' }}>Drop your audio file here</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>.mp3, .wav, .m4a, .mp4 — up to 500MB</p>
                 </div>
               )}
             </div>
           </div>
 
-          <button
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-3 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-60"
-            type="submit" disabled={loading}
-          >
+          <button type="submit" disabled={loading}
+            style={{ background: '#7B61FF', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', opacity: loading ? 0.6 : 1, fontFamily: 'DM Sans, sans-serif' }}>
             {loading ? 'Uploading...' : 'Upload & Process'}
           </button>
         </form>

@@ -1,17 +1,226 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
-@theme {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
+:root {
+  --bg: #F8F7FF;
+  --surface: #FFFFFF;
+  --surface-elevated: #F3F2FF;
+  --primary: #7B61FF;
+  --primary-dim: rgba(123, 97, 255, 0.08);
+  --accent: #00C896;
+  --danger: #FF4D6A;
+  --text: #1A1A2E;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border: #E5E4F0;
+  --border-hover: #C4C2E0;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EEECFF 25%, #E0DEFF 50%, #EEECFF 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* Card flip */
+.flip-card { perspective: 1000px; }
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease;
+  transform-style: preserve-3d;
+}
+.flip-card-inner.flipped { transform: rotateY(180deg); }
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.flip-card-back { transform: rotateY(180deg); }
+
+/* Lora reading font utility */
+.font-lora { font-family: 'Lora', Georgia, serif; }
+.font-dm { font-family: 'DM Sans', system-ui, sans-serif; }
+
+/* ── Responsive Styles ─────────────────────────────────────────────────── */
+
+/* Chatbot drawer animation */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.chat-drawer {
+  animation: slideUp 0.3s ease;
+}
+
+/* Hamburger menu */
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 8px;
+  background: none;
+  border: none;
+}
+.hamburger-menu span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #1A1A2E;
+  border-radius: 999px;
+  transition: all 0.15s;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E4F0;
+  z-index: 100;
+}
+.nav-dropdown a, .nav-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 15px;
+  color: #1A1A2E;
+  text-decoration: none;
+  border-bottom: 1px solid #E5E4F0;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+}
+.nav-dropdown a:hover, .nav-dropdown button:hover {
+  background: #F8F7FF;
+}
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+  .nav-center-links { display: none !important; }
+  .hamburger-menu { display: flex !important; }
+  .nav-logout-desktop { display: none !important; }
+
+  .stats-grid { gap: 12px !important; }
+  .stats-grid > div { padding: 16px !important; }
+
+  .notes-chat-grid {
+    grid-template-columns: 60% 40% !important;
+  }
+
+  .tab-bar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar button { flex-shrink: 0 !important; font-size: 13px !important; padding: 6px 14px !important; }
+
+  .flashcard-card { width: 380px !important; }
+
+  .chat-sticky { position: static !important; }
+}
+
+/* Mobile (≤640px) */
+@media (max-width: 640px) {
+  /* Dashboard */
+  .dashboard-header { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+  .dashboard-header h1 { font-size: 24px !important; }
+  .dashboard-upload-btn { width: 100% !important; text-align: center !important; justify-content: center !important; }
+
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .lectures-grid { grid-template-columns: 1fr !important; }
+
+  /* Lecture detail */
+  .lecture-header h1 { font-size: 22px !important; }
+  .lecture-header-timestamp { display: none !important; }
+
+  .notes-chat-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .chat-panel-desktop { display: none !important; }
+  .chat-sticky { position: static !important; }
+
+  /* Notes content */
+  .notes-content h2 { font-size: 17px !important; padding-left: 8px !important; margin: 24px 0 10px !important; }
+  .notes-content p, .notes-content li { font-size: 14px !important; }
+
+  /* Flashcard */
+  .flashcard-card { width: calc(100vw - 64px) !important; height: 220px !important; }
+  .flashcard-card .flip-card-front p,
+  .flashcard-card .flip-card-back p { font-size: 15px !important; }
+
+  /* MCQ */
+  .mcq-card { padding: 16px !important; }
+
+  /* Glossary */
+  .glossary-grid { grid-template-columns: 1fr !important; }
+
+  /* Upload */
+  .upload-drop-zone { margin: 0 !important; }
+
+  /* General */
+  * { -webkit-tap-highlight-color: transparent; }
+  button, a { min-height: 44px; }
+}
+
+/* Mobile chat FAB — only show on mobile */
+.mobile-chat-fab { display: none !important; }
+
+@media (max-width: 640px) {
+  .mobile-chat-fab { display: flex !important; }
+
+  /* Lecture header */
+  .lecture-header { flex-direction: column !important; gap: 12px !important; }
+
+  /* Flashcard */
+  .flip-card { width: 100% !important; max-width: calc(100vw - 64px) !important; height: 220px !important; }
+
+  /* MCQ */
+  .mcq-option { padding: 12px 16px !important; }
+
+  /* Glossary */
+  .glossary-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (min-width: 641px) {
+  .mobile-chat-fab { display: none !important; }
 }
